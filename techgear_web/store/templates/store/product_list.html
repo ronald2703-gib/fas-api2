@@ -1,0 +1,77 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Catálogo - TechGear{% endblock %}
+
+{% block content %}
+<section class="tg-hero mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">Encuentra tu próxima <span class="text-primary">tecnología</span></h1>
+            <p class="lead mb-3">Explora nuestro catálogo de productos con stock actualizado en tiempo real.</p>
+            <form method="get" class="row g-2">
+                <div class="col-sm-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Buscar producto...">
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        {% for c in categorias %}
+                            <option value="{{ c }}" {% if c == categoria_sel %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-sm-2 d-grid">
+                    <button class="btn btn-tg" type="submit">Filtrar</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4 d-none d-md-block text-center">
+            <i class="bi bi-cpu tg-hero-icon"></i>
+        </div>
+    </div>
+</section>
+
+{% if api_down %}
+    <div class="alert alert-warning"><i class="bi bi-wifi-off me-2"></i>No se pudo conectar con la API. Si está en Render, espera unos segundos y recarga.</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">Productos <span class="badge tg-badge-cat ms-1">{{ products|length }}</span></h4>
+</div>
+
+<div class="row g-4">
+    {% for product in products %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <div class="tg-card tg-product">
+            <div class="tg-product-img"><i class="bi bi-box-seam"></i></div>
+            <div class="p-3 d-flex flex-column">
+                <span class="badge tg-badge-cat align-self-start mb-2">{{ product.categoria }}</span>
+                <h5 class="fw-bold mb-1">{{ product.nombre }}</h5>
+                <p class="text-muted small flex-grow-1">{{ product.descripcion|truncatechars:90 }}</p>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <span class="tg-price">${{ product.precio|floatformat:"-2g" }}</span>
+                    {% if product.stock <= 0 %}
+                        <span class="badge text-bg-danger"><i class="bi bi-x-circle me-1"></i>Agotado</span>
+                    {% elif product.stock <= low_stock %}
+                        <span class="badge text-bg-warning"><i class="bi bi-exclamation-circle me-1"></i>Quedan {{ product.stock }}</span>
+                    {% else %}
+                        <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>{{ product.stock }} disp.</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="tg-card p-5 text-center tg-empty">
+            <i class="bi bi-inbox"></i>
+            <h5 class="mt-3">No hay productos para mostrar</h5>
+            <p class="mb-0">Prueba con otra búsqueda o categoría.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+/* ====== TechGear – tema azul suave ====== */
+:root {
+  --tg-primary: #4f8ef7;
+  --tg-primary-dark: #3a74d8;
+  --tg-primary-soft: #e8f1ff;
+  --tg-bg: #f4f8ff;
+  --tg-surface: #ffffff;
+  --tg-text: #1f2a44;
+  --tg-muted: #6b7a99;
+  --tg-border: #e3ebf8;
+  --tg-shadow-sm: 0 2px 8px rgba(79, 142, 247, .10);
+  --tg-shadow: 0 8px 24px rgba(31, 42, 68, .08);
+  --tg-shadow-lg: 0 16px 40px rgba(79, 142, 247, .18);
+  --tg-radius: 16px;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--tg-bg);
+  color: var(--tg-text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+main { flex: 1; }
+
+/* ---- Navbar ---- */
+.tg-navbar { background: var(--tg-surface); box-shadow: var(--tg-shadow-sm); border-bottom: 1px solid var(--tg-border); }
+.tg-brand { font-weight: 800; color: var(--tg-text) !important; letter-spacing: -.5px; }
+.tg-brand .bi { color: var(--tg-primary); }
+.tg-navbar .nav-link { color: var(--tg-muted); font-weight: 500; border-radius: 10px; padding: .5rem .9rem !important; }
+.tg-navbar .nav-link:hover, .tg-navbar .nav-link.active { color: var(--tg-primary-dark); background: var(--tg-primary-soft); }
+
+/* ---- Botones ---- */
+.btn-tg { background: var(--tg-primary); border-color: var(--tg-primary); color: #fff; font-weight: 600; border-radius: 12px; box-shadow: 0 4px 12px rgba(79,142,247,.3); }
+.btn-tg:hover, .btn-tg:focus { background: var(--tg-primary-dark); border-color: var(--tg-primary-dark); color: #fff; transform: translateY(-1px); }
+.btn-tg-soft { background: var(--tg-primary-soft); color: var(--tg-primary-dark); border: none; font-weight: 600; border-radius: 12px; }
+.btn-tg-soft:hover { background: #d6e6ff; color: var(--tg-primary-dark); }
+.btn { transition: all .15s ease; }
+
+/* ---- Hero ---- */
+.tg-hero {
+  background: linear-gradient(135deg, #dbe9ff 0%, #f1f6ff 60%, #ffffff 100%);
+  border: 1px solid var(--tg-border);
+  border-radius: 24px;
+  box-shadow: var(--tg-shadow);
+  padding: 2.5rem 2rem;
+}
+.tg-hero h1 { font-weight: 800; letter-spacing: -1px; }
+.tg-hero .lead { color: var(--tg-muted); }
+.tg-hero-icon { font-size: 5rem; color: var(--tg-primary); opacity: .85; }
+
+/* ---- Tarjetas ---- */
+.tg-card { background: var(--tg-surface); border: 1px solid var(--tg-border); border-radius: var(--tg-radius); box-shadow: var(--tg-shadow); }
+.tg-product { transition: transform .2s ease, box-shadow .2s ease; overflow: hidden; height: 100%; }
+.tg-product:hover { transform: translateY(-6px); box-shadow: var(--tg-shadow-lg); }
+.tg-product-img {
+  height: 150px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--tg-primary-soft), #f7faff);
+  color: var(--tg-primary); font-size: 3.5rem;
+}
+.tg-price { font-size: 1.35rem; font-weight: 800; color: var(--tg-primary-dark); }
+.tg-badge-cat { background: var(--tg-primary-soft); color: var(--tg-primary-dark); font-weight: 600; border-radius: 8px; }
+
+/* ---- Stats dashboard ---- */
+.tg-stat { padding: 1.25rem; display: flex; align-items: center; gap: 1rem; }
+.tg-stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.tg-stat-icon.blue { background: var(--tg-primary-soft); color: var(--tg-primary-dark); }
+.tg-stat-icon.green { background: #e3f8ec; color: #1f9d55; }
+.tg-stat-icon.amber { background: #fff3dc; color: #d98a00; }
+.tg-stat-icon.rose { background: #ffe8ec; color: #d63a55; }
+.tg-stat .value { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+.tg-stat .label { color: var(--tg-muted); font-size: .85rem; }
+
+/* ---- Tabla ---- */
+.tg-table thead th { background: var(--tg-primary-soft); color: var(--tg-primary-dark); font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; border: none; padding: .9rem 1rem; }
+.tg-table tbody td { padding: .9rem 1rem; vertical-align: middle; border-color: var(--tg-border); }
+.tg-table tbody tr:hover { background: #f8fbff; }
+.tg-table-wrap { border-radius: var(--tg-radius); overflow: hidden; }
+
+/* ---- Formularios ---- */
+.form-control, .form-select { border-radius: 12px; border-color: var(--tg-border); padding: .65rem .9rem; }
+.form-control:focus, .form-select:focus { border-color: var(--tg-primary); box-shadow: 0 0 0 .25rem rgba(79,142,247,.18); }
+.input-group-text { background: var(--tg-primary-soft); border-color: var(--tg-border); color: var(--tg-primary-dark); border-radius: 12px; }
+.input-group > .form-control { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.input-group > .input-group-text { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.form-label { font-weight: 600; font-size: .9rem; }
+
+/* ---- Auth ---- */
+.tg-auth-icon { width: 64px; height: 64px; border-radius: 18px; background: var(--tg-primary-soft); color: var(--tg-primary); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; }
+
+/* ---- Alerts ---- */
+.alert { border: none; border-radius: 14px; box-shadow: var(--tg-shadow-sm); }
+
+/* ---- Footer ---- */
+.tg-footer { color: var(--tg-muted); font-size: .9rem; border-top: 1px solid var(--tg-border); background: var(--tg-surface); }
+
+.tg-empty { color: var(--tg-muted); }
+.tg-empty .bi { font-size: 3.5rem; color: #b9cdf0; }
