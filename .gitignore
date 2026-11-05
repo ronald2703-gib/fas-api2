@@ -10,3 +10,8 @@ ENV/
 __pycache__/
 *.pyc
 .vscode/
+
+# Base de datos local de Django (ya no se usa) y salida de collectstatic / Vercel
+db.sqlite3
+staticfiles/
+.vercel/

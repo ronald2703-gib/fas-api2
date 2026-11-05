@@ -1,0 +1,92 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Mis pedidos - TechGear{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h2 class="fw-bold mb-0"><i class="bi bi-bag-check text-primary me-2"></i>Mis pedidos</h2>
+        <p class="text-muted mb-0">Los productos que guardaste para comprar y tu historial</p>
+    </div>
+    <a href="{% url 'product_list' %}" class="btn btn-tg px-4"><i class="bi bi-grid me-1"></i>Ir al catálogo</a>
+</div>
+
+{% if api_down %}
+    <div class="alert alert-warning"><i class="bi bi-wifi-off me-2"></i>No se pudo conectar con la API. Si está en Render, espera unos segundos y recarga.</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="tg-card tg-stat">
+            <div class="tg-stat-icon amber"><i class="bi bi-hourglass-split"></i></div>
+            <div><div class="value">{{ stats.pendientes }}</div><div class="label">Pendientes por comprar</div></div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="tg-card tg-stat">
+            <div class="tg-stat-icon blue"><i class="bi bi-cash-coin"></i></div>
+            <div><div class="value">${{ stats.por_pagar|floatformat:"-2g" }}</div><div class="label">Total pendiente</div></div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="tg-card tg-stat">
+            <div class="tg-stat-icon green"><i class="bi bi-check2-circle"></i></div>
+            <div><div class="value">{{ stats.comprados }}</div><div class="label">Compras confirmadas</div></div>
+        </div>
+    </div>
+</div>
+
+<ul class="nav tg-tabs mb-3">
+    <li class="nav-item"><a class="nav-link {% if not filtro %}active{% endif %}" href="{% url 'mis_pedidos' %}">Todos</a></li>
+    <li class="nav-item"><a class="nav-link {% if filtro == 'pendiente' %}active{% endif %}" href="?estado=pendiente">Pendientes</a></li>
+    <li class="nav-item"><a class="nav-link {% if filtro == 'comprado' %}active{% endif %}" href="?estado=comprado">Comprados</a></li>
+    <li class="nav-item"><a class="nav-link {% if filtro == 'cancelado' %}active{% endif %}" href="?estado=cancelado">Cancelados</a></li>
+</ul>
+
+{% for o in orders %}
+<div class="tg-card tg-order mb-3">
+    <div class="tg-order-img">
+        {% if o.imagen %}<img src="{{ o.imagen }}" alt="Imagen del pedido" loading="lazy">{% else %}<i class="bi bi-box-seam"></i>{% endif %}
+    </div>
+    <div class="tg-order-body">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="fw-bold">Pedido #{{ o.corto }}</span>
+            {% if o.estado == 'pendiente' %}<span class="badge text-bg-warning">Pendiente</span>
+            {% elif o.estado == 'comprado' %}<span class="badge text-bg-success">Comprado</span>
+            {% else %}<span class="badge text-bg-secondary">Cancelado</span>{% endif %}
+            {% if o.fecha_dt %}<span class="small text-muted ms-md-auto">{{ o.fecha_dt|date:"d/m/Y H:i" }}</span>{% endif %}
+        </div>
+        <ul class="list-unstyled small mb-2">
+            {% for it in o.items %}
+            <li class="d-flex justify-content-between gap-3">
+                <span>{{ it.cantidad }} × {{ it.nombre|default:"Producto" }}</span>
+                <span class="text-muted">${{ it.subtotal|floatformat:"-2g" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div><span class="text-muted small">Total</span> <span class="tg-price">${{ o.total|floatformat:"-2g" }}</span></div>
+            {% if o.estado == 'pendiente' %}
+            <div class="d-flex gap-2">
+                <form method="post" action="{% url 'pedido_estado' o.id %}" onsubmit="return confirm('¿Cancelar este pedido?');">
+                    {% csrf_token %}<input type="hidden" name="estado" value="cancelado">
+                    <button class="btn btn-tg-soft btn-sm px-3" type="submit"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                </form>
+                <form method="post" action="{% url 'pedido_estado' o.id %}">
+                    {% csrf_token %}<input type="hidden" name="estado" value="comprado">
+                    <button class="btn btn-tg btn-sm px-3" type="submit"><i class="bi bi-check2-circle me-1"></i>Confirmar compra</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="tg-card p-5 text-center tg-empty">
+    <i class="bi bi-bag"></i>
+    <h5 class="mt-3">{% if filtro %}No tienes pedidos en este estado{% else %}Aún no tienes pedidos{% endif %}</h5>
+    <p class="mb-3">Pulsa «Comprar» en un producto del catálogo y lo guardaremos aquí.</p>
+    <a href="{% url 'product_list' %}" class="btn btn-tg px-4">Ver catálogo</a>
+</div>
+{% endfor %}
+{% endblock %}

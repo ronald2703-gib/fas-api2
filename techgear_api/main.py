@@ -8,9 +8,8 @@ from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from db.database import get_database
-from models.schemas import UserCreate, UserLogin, TokenResponse, UserResponse, ProductCreate, ProductUpdate, ProductResponse, OrderCreate, OrderResponse
+from models.schemas import UserCreate, UserLogin, TokenResponse, UserResponse, ProductCreate, ProductUpdate, ProductResponse, OrderCreate, OrderResponse, OrderStatusUpdate
 from bson import ObjectId
-from datetime import datetime
 
 app = FastAPI(title="TechGear API", version="1.0.0")
 
@@ -91,6 +90,28 @@ async def require_admin(current_user: dict = Depends(get_current_user)):
 def user_to_response(u: dict) -> dict:
     return {"id": str(u["_id"]), "nombre": u["nombre"], "email": u["email"], "rol": u["rol"]}
 
+def product_to_response(p: dict) -> dict:
+    return {
+        "id": str(p["_id"]),
+        "nombre": p["nombre"],
+        "descripcion": p["descripcion"],
+        "precio": p["precio"],
+        "stock": p["stock"],
+        "categoria": p["categoria"],
+        "imagen": p.get("imagen") or None,
+    }
+
+def order_to_response(o: dict) -> dict:
+    return {
+        "id": str(o["_id"]),
+        "usuario_id": o["usuario_id"],
+        "items": o.get("items", []),
+        "total": o.get("total", 0),
+        "fecha": o["fecha"],
+        "estado": o.get("estado", "pendiente"),
+        "imagen": o.get("imagen") or None,
+    }
+
 # --- AUTENTICACIÓN ---
 @app.post("/auth/login", response_model=TokenResponse, tags=["Autenticación"])
 async def login(credentials: UserLogin):
@@ -123,7 +144,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     return user_to_response(current_user)
 
 @app.get("/users", response_model=list[UserResponse], tags=["Usuarios"])
-async def list_users(current_user: dict = Depends(get_current_user)):
+async def list_users(admin: dict = Depends(require_admin)):
     db = get_database()
     users = []
     async for u in db["users"].find():
@@ -136,28 +157,14 @@ async def create_product(product: ProductCreate, admin: dict = Depends(require_a
     db = get_database()
     result = await db["products"].insert_one(product.model_dump())
     created = await db["products"].find_one({"_id": result.inserted_id})
-    return {
-        "id": str(created["_id"]),
-        "nombre": created["nombre"],
-        "descripcion": created["descripcion"],
-        "precio": created["precio"],
-        "stock": created["stock"],
-        "categoria": created["categoria"]
-    }
+    return product_to_response(created)
 
 @app.get("/products", response_model=list[ProductResponse], tags=["Productos"])
 async def get_products():
     db = get_database()
     products = []
     async for p in db["products"].find():
-        products.append({
-            "id": str(p["_id"]),
-            "nombre": p["nombre"],
-            "descripcion": p["descripcion"],
-            "precio": p["precio"],
-            "stock": p["stock"],
-            "categoria": p["categoria"]
-        })
+        products.append(product_to_response(p))
     return products
 
 @app.get("/products/{id}", response_model=ProductResponse, tags=["Productos"])
@@ -168,14 +175,7 @@ async def get_product(id: str):
     p = await db["products"].find_one({"_id": ObjectId(id)})
     if not p:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return {
-        "id": str(p["_id"]),
-        "nombre": p["nombre"],
-        "descripcion": p["descripcion"],
-        "precio": p["precio"],
-        "stock": p["stock"],
-        "categoria": p["categoria"]
-    }
+    return product_to_response(p)
 
 @app.put("/products/{id}", response_model=ProductResponse, tags=["Productos"])
 async def update_product(id: str, product_update: ProductUpdate, admin: dict = Depends(require_admin)):
@@ -190,14 +190,7 @@ async def update_product(id: str, product_update: ProductUpdate, admin: dict = D
     p = await db["products"].find_one({"_id": ObjectId(id)})
     if not p:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return {
-        "id": str(p["_id"]),
-        "nombre": p["nombre"],
-        "descripcion": p["descripcion"],
-        "precio": p["precio"],
-        "stock": p["stock"],
-        "categoria": p["categoria"]
-    }
+    return product_to_response(p)
 
 @app.delete("/products/{id}", tags=["Productos"])
 async def delete_product(id: str, admin: dict = Depends(require_admin)):
@@ -211,33 +204,84 @@ async def delete_product(id: str, admin: dict = Depends(require_admin)):
 
 # --- PEDIDOS ---
 @app.post("/orders", response_model=OrderResponse, status_code=status.HTTP_201_CREATED, tags=["Pedidos"])
-async def create_order(order: OrderCreate):
+async def create_order(order: OrderCreate, current_user: dict = Depends(get_current_user)):
+    """Crea un pedido PENDIENTE para el usuario autenticado.
+    Precio y nombre se toman del producto en la base de datos (no del cliente)."""
     db = get_database()
-    total = sum(item.cantidad * item.precio_unitario for item in order.items)
-    order_dict = order.model_dump()
-    order_dict["total"] = total
-    order_dict["fecha"] = datetime.now()
-    
-    result = await db["orders"].insert_one(order_dict)
-    created = await db["orders"].find_one({"_id": result.inserted_id})
-    return {
-        "id": str(created["_id"]),
-        "usuario_id": created["usuario_id"],
-        "items": created["items"],
-        "total": created["total"],
-        "fecha": created["fecha"]
+    items, total, imagen = [], 0.0, order.imagen or None
+    for it in order.items:
+        if not ObjectId.is_valid(it.product_id):
+            raise HTTPException(status_code=400, detail="ID de producto no válido")
+        p = await db["products"].find_one({"_id": ObjectId(it.product_id)})
+        if not p:
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+        if p.get("stock", 0) < it.cantidad:
+            raise HTTPException(status_code=400, detail=f"Stock insuficiente para «{p['nombre']}»")
+        items.append({
+            "product_id": it.product_id,
+            "nombre": p["nombre"],
+            "cantidad": it.cantidad,
+            "precio_unitario": p["precio"],
+        })
+        total += it.cantidad * p["precio"]
+        imagen = imagen or p.get("imagen") or None
+    doc = {
+        "usuario_id": str(current_user["_id"]),
+        "items": items,
+        "total": round(total, 2),
+        "fecha": datetime.now(timezone.utc),
+        "estado": "pendiente",
+        "imagen": imagen,
     }
+    result = await db["orders"].insert_one(doc)
+    created = await db["orders"].find_one({"_id": result.inserted_id})
+    return order_to_response(created)
+
+@app.get("/orders/me", response_model=list[OrderResponse], tags=["Pedidos"])
+async def get_my_orders(current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    cursor = db["orders"].find({"usuario_id": str(current_user["_id"])}).sort("fecha", -1)
+    return [order_to_response(o) async for o in cursor]
 
 @app.get("/orders", response_model=list[OrderResponse], tags=["Pedidos"])
-async def get_orders():
+async def get_orders(admin: dict = Depends(require_admin)):
     db = get_database()
-    orders = []
-    async for o in db["orders"].find():
-        orders.append({
-            "id": str(o["_id"]),
-            "usuario_id": o["usuario_id"],
-            "items": o["items"],
-            "total": o["total"],
-            "fecha": o["fecha"]
-        })
-    return orders
+    cursor = db["orders"].find().sort("fecha", -1)
+    return [order_to_response(o) async for o in cursor]
+
+@app.patch("/orders/{id}/estado", response_model=OrderResponse, tags=["Pedidos"])
+async def update_order_status(id: str, body: OrderStatusUpdate, current_user: dict = Depends(get_current_user)):
+    """Confirma la compra o cancela un pedido pendiente (solo su dueño o un admin)."""
+    db = get_database()
+    if not ObjectId.is_valid(id):
+        raise HTTPException(status_code=400, detail="ID no válido")
+    o = await db["orders"].find_one({"_id": ObjectId(id)})
+    es_dueno = o is not None and o["usuario_id"] == str(current_user["_id"])
+    if not o or not (es_dueno or current_user.get("rol") == "admin"):
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if o.get("estado", "pendiente") != "pendiente":
+        raise HTTPException(status_code=400, detail="Solo se pueden modificar pedidos pendientes")
+
+    if body.estado == "comprado":
+        # Descuenta stock de forma atomica; si algun item falla, revierte los anteriores
+        descontados = []
+        for it in o["items"]:
+            if not ObjectId.is_valid(it.get("product_id", "")):
+                raise HTTPException(status_code=400, detail="El pedido tiene un producto inválido")
+            r = await db["products"].update_one(
+                {"_id": ObjectId(it["product_id"]), "stock": {"$gte": it["cantidad"]}},
+                {"$inc": {"stock": -it["cantidad"]}},
+            )
+            if r.modified_count == 0:
+                for d in descontados:
+                    await db["products"].update_one({"_id": ObjectId(d["product_id"])}, {"$inc": {"stock": d["cantidad"]}})
+                nombre = it.get("nombre", "un producto")
+                raise HTTPException(status_code=400, detail=f"Stock insuficiente para «{nombre}»")
+            descontados.append(it)
+
+    await db["orders"].update_one(
+        {"_id": o["_id"]},
+        {"$set": {"estado": body.estado, "fecha_estado": datetime.now(timezone.utc)}},
+    )
+    updated = await db["orders"].find_one({"_id": o["_id"]})
+    return order_to_response(updated)

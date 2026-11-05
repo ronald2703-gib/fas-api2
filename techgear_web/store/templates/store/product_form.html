@@ -2,6 +2,7 @@
 
 {% block title %}{% if modo == 'editar' %}Editar{% else %}Nuevo{% endif %} producto - TechGear{% endblock %}
 
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-7">
@@ -25,7 +26,7 @@
                 </div>
             {% endif %}
 
-            <form method="POST">
+            <form method="POST" id="productForm">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label class="form-label" for="nombre">Nombre</label>
@@ -62,6 +63,21 @@
                         </div>
                     </div>
                 </div>
+                <div class="mb-4">
+                    <label class="form-label">Imagen del producto <span class="text-muted fw-normal">(opcional)</span></label>
+                    <div class="d-flex gap-3 align-items-start flex-wrap">
+                        <div class="tg-thumb tg-thumb-lg" id="imgPreviewBox">
+                            <img id="imgPreview" alt="" {% if img_url or img_data %}src="{{ img_data|default:img_url }}"{% else %}hidden{% endif %}>
+                            <i class="bi bi-image" id="imgPlaceholder" {% if img_url or img_data %}hidden{% endif %}></i>
+                        </div>
+                        <div class="flex-grow-1" style="min-width:220px">
+                            <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp,image/gif" class="form-control mb-2">
+                            <input type="url" id="imgUrl" name="imagen_url" class="form-control mb-2" placeholder="…o pega la URL de una imagen (https://…)" value="{{ img_url }}">
+                            <input type="hidden" id="imgData" name="imagen" value="{{ img_data }}">
+                            <button type="button" id="imgClear" class="btn btn-tg-soft btn-sm"><i class="bi bi-x-circle me-1"></i>Quitar imagen</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="d-flex gap-2 justify-content-end">
                     <a href="{% url 'dashboard' %}" class="btn btn-tg-soft px-4">Cancelar</a>
                     <button type="submit" class="btn btn-tg px-4">
@@ -72,4 +88,47 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var file = document.getElementById('imgFile'), url = document.getElementById('imgUrl'),
+        data = document.getElementById('imgData'), prev = document.getElementById('imgPreview'),
+        ph = document.getElementById('imgPlaceholder'), MAX = 640;
+
+    function show(src) {
+        if (src) { prev.src = src; prev.hidden = false; ph.hidden = true; }
+        else { prev.removeAttribute('src'); prev.hidden = true; ph.hidden = false; }
+    }
+    // Reduce la imagen a 640px y la comprime a JPEG para que pese poco
+    file.addEventListener('change', function () {
+        var f = file.files[0]; if (!f) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var img = new Image();
+            img.onload = function () {
+                var k = Math.min(1, MAX / Math.max(img.width, img.height));
+                var c = document.createElement('canvas');
+                c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+                var ctx = c.getContext('2d');
+                ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+                ctx.drawImage(img, 0, 0, c.width, c.height);
+                data.value = c.toDataURL('image/jpeg', 0.82);
+                url.value = '';
+                show(data.value);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(f);
+    });
+    url.addEventListener('input', function () {
+        if (url.value.trim()) { data.value = ''; file.value = ''; }
+        show(url.value.trim() || data.value);
+    });
+    document.getElementById('imgClear').addEventListener('click', function () {
+        data.value = ''; url.value = ''; file.value = ''; show('');
+    });
+})();
+</script>
 {% endblock %}
