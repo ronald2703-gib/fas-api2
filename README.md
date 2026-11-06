@@ -1,43 +1,101 @@
-# TechGear Web (Django MVT)
 
-Frontend y panel administrativo construido con Django para consumir la API de FastAPI.
-https://fas-api2.onrender.com
+⚡ TechGear
 
-## Ejecutar en local
-```bash
-# API (puerto 8000)
-cd techgear_api && pip install -r requirements.txt
-# .env: MONGO_URI=...  SECRET_KEY=...
-uvicorn main:app --reload
+🛒 Tienda web de tecnología con catálogo, pedidos y panel de administración
 
-# Frontend Django (puerto 8001)
-cd techgear_web && pip install -r requirements.txt
-# opcional .env (ver .env.example): API_URL=http://127.0.0.1:8000
-python manage.py runserver 8001   # ya no hace falta "migrate": no usa base de datos propia
-```
-Rutas: `/` catálogo, `/login/`, `/register/`, `/logout/`, `/mis-pedidos/` (cliente), `/dashboard/` (admin).
-En Render define la variable `SECRET_KEY` de la API.
+Mostrar imagen Mostrar imagen Mostrar imagen Mostrar imagen Mostrar imagen
 
-## Clase 5 – Dashboard CRUD (rol admin)
-- `/dashboard/` lista los productos con estadísticas; solo accesible con rol `admin`.
-- Crear (`POST /products`), editar (`PUT /products/{id}`) y eliminar (`DELETE /products/{id}`) llaman a la API FastAPI con el JWT guardado en la sesión.
-- La API protege esas rutas con `require_admin`; `GET /products` sigue siendo público.
-- El rol admin lo define el servidor con la variable `ADMIN_EMAILS` (en `techgear_api/.env` y en Render). Nadie puede registrarse como admin desde el formulario.
+Mostrar imagen Mostrar imagen Mostrar imagen
+
+🌐 Ver la tienda en vivo · 📖 Documentación de la API · 💻 Código
 
 
+📑 Contenido
+📝 Descripción
+🚀 App desplegada
+✨ Funcionalidades
+🏗️ Arquitectura
+🧰 Tecnologías y librerías
+📁 Estructura del proyecto
+⚙️ Instalación y ejecución
+🔌 Endpoints de la API
+🛡️ Manejo de excepciones
+☁️ Despliegue
+👨‍💻 Autor
+📝 Descripción
 
-## Compras y pedidos (cliente)
-- Sin sesión, el catálogo es público y el botón **Comprar** lleva a `/login/` (y vuelve al catálogo al entrar).
-- Con sesión de cliente, **Comprar** guarda el producto como pedido *pendiente* en `/mis-pedidos/`, donde se puede **confirmar la compra** (descuenta stock) o **cancelar**.
-- Cada pedido lleva una imagen (por defecto la del producto). El admin sube la imagen del producto en el formulario (archivo o URL).
-- La API toma precio y nombre del producto en la base de datos y el usuario del token JWT: el cliente no puede falsearlos.
-- Endpoints: `POST /orders`, `GET /orders/me`, `PATCH /orders/{id}/estado`, `GET /orders` (solo admin).
+TechGear es una tienda de tecnología dividida en dos partes que se comunican entre sí:
 
-## Despliegue del front en Vercel
-1. Subir el repo a GitHub y en Vercel: **Add New → Project** → importar el repo.
-2. **Root Directory:** `techgear_web` (Vercel detecta Django por `manage.py`; no requiere más configuración).
-3. **Environment Variables:**
-   - `SECRET_KEY` → clave nueva (`python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"`)
-   - `API_URL` → `https://fas-api2.onrender.com`
-4. Deploy. Cada `git push` a `main` vuelve a desplegar.
-5. La API sigue en Render: tras cambiar `techgear_api/`, Render se redepliega con el push.
+🔧 una API REST hecha con FastAPI y MongoDB, que guarda usuarios, productos y pedidos;
+🎨 un frontend hecho con Django, que consume la API y ofrece la tienda y el panel de administración.
+
+Cada persona ve algo distinto según su rol: visitante, cliente o administrador.
+
+🚀 App desplegada
+🧩 Parte	🔗 Enlace
+🌐 Frontend (Vercel)	https://fas-api2.vercel.app/
+⚙️ API (Render)	https://fas-api2.onrender.com
+📖 Swagger / documentación	https://fas-api2.onrender.com/docs
+💻 Repositorio (GitHub)	https://github.com/ronald2703-gib/fas-api2
+
+⏳ Ojo: la API está en el plan gratuito de Render. Si lleva un rato sin uso, la primera petición puede tardar hasta un minuto en despertar.
+
+✨ Funcionalidades
+👤 Rol	🎯 Qué puede hacer
+🙋 Visitante	Ver el catálogo 🔎, buscar y filtrar por categoría. Al pulsar Comprar 🛍️ lo lleva al login y, al entrar, vuelve al catálogo.
+🛒 Cliente	Guardar productos como pedidos pendientes en Mis pedidos 📦, confirmar la compra ✅ (descuenta stock) o cancelar ❌. Cada pedido muestra la imagen del producto 🖼️.
+🛠️ Administrador	Dashboard 📊 con estadísticas y CRUD de productos (crear, editar, eliminar) con imagen por archivo o URL.
+
+🔐 Nadie puede registrarse como admin desde el formulario: el rol lo asigna la API según la variable ADMIN_EMAILS.
+
+🏗️ Arquitectura
+HTTP + JWT
+👤 Usuario
+🎨 Frontend DjangoVercel
+⚙️ API FastAPIRender
+🍃 MongoDB Atlas
+🧰 Tecnologías y librerías
+<details open> <summary><b>⚙️ API — <code>techgear_api</code></b></summary>
+🐍 Python 3 y FastAPI con Uvicorn
+🍃 MongoDB (Atlas) con Motor (driver asíncrono)
+✅ Pydantic y pydantic-settings (validación), email-validator
+🔑 PyJWT (autenticación con tokens JWT) y python-dotenv
+</details> <details open> <summary><b>🎨 Frontend — <code>techgear_web</code></b></summary>
+🟩 Django (plantillas, vistas, mensajes y sesión en cookie firmada, sin base de datos propia)
+🌐 Requests (consumo de la API), python-dotenv, tzdata
+💅 Bootstrap 5 y Bootstrap Icons (CDN) más CSS propio
+</details> <details open> <summary><b>☁️ Despliegue</b></summary>
+▲ Vercel → frontend
+🟢 Render → API
+🐙 GitHub → código y releases
+</details>
+📁 Estructura del proyecto
+techgear/
+├── 📂 techgear_api/              # ⚙️ API FastAPI
+│   ├── main.py                   # Endpoints: usuarios, productos, pedidos
+│   ├── models/schemas.py         # Modelos Pydantic y validaciones
+│   ├── db/database.py            # Conexión a MongoDB
+│   └── requirements.txt
+├── 📂 techgear_web/              # 🎨 Frontend Django
+│   ├── techgear_web/             # settings, urls, wsgi
+│   ├── store/
+│   │   ├── views.py              # Catálogo, login, dashboard, compras
+│   │   ├── urls.py
+│   │   ├── templates/store/      # Plantillas HTML
+│   │   └── static/store/         # CSS e imágenes
+│   ├── requirements.txt
+│   ├── vercel.json
+│   └── .env.example
+└── 📄 README.md
+⚙️ Instalación y ejecución en local
+
+📋 Requisitos: Python 3.12+, una base de datos MongoDB (por ejemplo Atlas) y Git.
+
+Autor🗽
+
+--Ronald fernando luna vidarte--
+-proyecto-- ⚡ TechGear
+--ficha--: 3494620
+--desarrollador--
+     ✌️😎
+
