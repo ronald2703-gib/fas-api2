@@ -1,5 +1,6 @@
 {% extends 'store/base.html' %}
 
+{% block robots %}noindex, nofollow{% endblock %}
 {% block title %}{% if modo == 'editar' %}Editar{% else %}Nuevo{% endif %} producto - TechGear{% endblock %}
 
 
@@ -14,10 +15,10 @@
         </nav>
 
         <div class="tg-card p-4 p-md-5">
-            <h3 class="fw-bold mb-4">
+            <h1 class="h3 fw-bold mb-4">
                 <i class="bi {% if modo == 'editar' %}bi-pencil-square{% else %}bi-plus-circle{% endif %} text-primary me-2"></i>
                 {% if modo == 'editar' %}Editar producto{% else %}Nuevo producto{% endif %}
-            </h3>
+            </h1>
 
             {% if errors %}
                 <div class="alert alert-danger">
@@ -64,7 +65,7 @@
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="form-label">Imagen del producto <span class="text-muted fw-normal">(opcional)</span></label>
+                    <label class="form-label" for="imgFile">Imagen del producto <span class="text-muted fw-normal">(opcional)</span></label>
                     <div class="d-flex gap-3 align-items-start flex-wrap">
                         <div class="tg-thumb tg-thumb-lg" id="imgPreviewBox">
                             <img id="imgPreview" alt="" {% if img_url or img_data %}src="{{ img_data|default:img_url }}"{% else %}hidden{% endif %}>
@@ -72,7 +73,7 @@
                         </div>
                         <div class="flex-grow-1" style="min-width:220px">
                             <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp,image/gif" class="form-control mb-2">
-                            <input type="url" id="imgUrl" name="imagen_url" class="form-control mb-2" placeholder="…o pega la URL de una imagen (https://…)" value="{{ img_url }}">
+                            <input type="url" id="imgUrl" name="imagen_url" class="form-control mb-2" placeholder="…o pega la URL de una imagen (https://…)" aria-label="URL de la imagen" value="{{ img_url }}">
                             <input type="hidden" id="imgData" name="imagen" value="{{ img_data }}">
                             <button type="button" id="imgClear" class="btn btn-tg-soft btn-sm"><i class="bi bi-x-circle me-1"></i>Quitar imagen</button>
                         </div>

@@ -4,6 +4,7 @@ from functools import wraps
 
 from django.conf import settings
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -388,3 +389,17 @@ def pedido_estado(request, order_id):
     else:
         messages.error(request, _api_error(resp, "No se pudo actualizar el pedido."))
     return redirect("mis_pedidos")
+
+
+def robots_txt(request):
+    """robots.txt: indexar el catálogo y dejar fuera las zonas privadas."""
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /dashboard/",
+        "Disallow: /mis-pedidos/",
+        "Disallow: /comprar/",
+        "Disallow: /login/",
+        "Disallow: /register/",
+    ]
+    return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")

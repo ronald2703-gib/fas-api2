@@ -98,6 +98,11 @@ USE_TZ = True
 # Static files. Vercel detecta STATIC_ROOT, ejecuta collectstatic solo y sirve /static/ desde su CDN.
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Nombres con hash (techgear.abc123.css): permite cachear los estáticos un año sin que se queden viejos.
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'},
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
